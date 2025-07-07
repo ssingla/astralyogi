@@ -23,16 +23,27 @@ if not st.session_state.profile_collected:
     with st.form("birth_form"):
         name = st.text_input("Your Name")
         dob = st.date_input("Date of Birth")
-        tob = st.text_input("Time of Birth (HH:MM, 24hr)")
-        city = st.text_input("Place of Birth (City)")
+
+        # Time selectors
+        col1, col2 = st.columns(2)
+        with col1:
+            hour = st.selectbox("Hour", list(range(0, 24)))
+        with col2:
+            minute = st.selectbox("Minute", list(range(0, 60)))
+
+        # City dropdown
+        cities = ["Bathinda", "Delhi", "Mumbai", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Pune", "Ahmedabad", "Jaipur"]
+        city = st.selectbox("Place of Birth", cities)
+
         submitted = st.form_submit_button("Start Chat")
 
-        if submitted and all([name, dob, tob, city]):
+        if submitted and all([name, dob, city]):
+            tob = f"{hour:02d}:{minute:02d}"
             st.session_state.astro_data = get_astrology_profile(
                 name=str(name),
                 dob=str(dob),
-                tob=str(tob),
-                city=str(city),
+                tob=tob,
+                city=city,
                 tz_offset=5.5,
                 adjust_dst=False
             )
@@ -77,6 +88,15 @@ Now give an insightful, mystical, karmically-aware response based on their Moon 
 Respond with spiritual clarity and uplifting Vedic guidance.
 """
 
+        with st.expander("🔍 GPT Prompt Preview"):
+            st.code(prompt)
+
+        print("\n--- FULL PROMPT SENT TO GPT ---\n")
+        print(prompt)
+
+        with st.expander("🪐 Astro Data from Engine"):
+            st.json(data)
+
         messages = [{"role": "system", "content": prompt}]
         messages += st.session_state.messages
 
@@ -86,10 +106,10 @@ Respond with spiritual clarity and uplifting Vedic guidance.
                 messages=messages
             )
             reply = response["choices"][0]["message"]["content"]
-            with st.expander("🧾 Raw GPT Response"):
-                 st.code(reply)
             st.session_state.messages.append({"role": "assistant", "content": reply})
             with st.chat_message("assistant"):
                 st.markdown(f"**🧘 AstralYogi:** {reply}")
+            with st.expander("🧾 Raw GPT Response"):
+                st.code(reply)
         except Exception as e:
             st.error("Failed to generate response: " + str(e))
