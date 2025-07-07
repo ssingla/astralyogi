@@ -28,6 +28,18 @@ def get_nakshatra_pada(degree):
     pada = int((degree % (360 / 27)) // ((360 / 27) / 4)) + 1
     return nakshatras[index], pada
 
+def get_astrology_profile(name, dob, tob, city, tz_offset=5.5, adjust_dst=False):
+    # Build a `data` object manually
+    data = type("AstroInput", (object,), {})()
+    data.name = name
+    data.date_of_birth = dob
+    data.time_of_birth = tob
+    data.city = city
+    data.tz_offset = tz_offset
+    data.adjust_dst = adjust_dst
+
+    return get_astro_data(data)  # Call your existing function
+
 def get_astro_data(data: AstroInput):
     try:
         location = geolocator.geocode(data.city)
