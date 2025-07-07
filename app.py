@@ -2,6 +2,7 @@ import streamlit as st
 import openai
 from astro_engine import get_astrology_profile
 import os
+import datetime
 
 st.set_page_config(page_title="AstralYogi Chatbot", layout="centered")
 st.title("🔱 AstralYogi — Your Vedic Astrology Chatbot")
@@ -22,7 +23,12 @@ if "profile_collected" not in st.session_state:
 if not st.session_state.profile_collected:
     with st.form("birth_form"):
         name = st.text_input("Your Name")
-        dob = st.date_input("Date of Birth")
+        dob = st.date_input(
+            "Date of Birth",
+            min_value=datetime.date(1900, 1, 1),
+            max_value=datetime.date.today(),
+            value=datetime.date(1990, 1, 1)
+        )
 
         # Time selectors
         col1, col2 = st.columns(2)
