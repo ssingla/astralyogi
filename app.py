@@ -58,7 +58,7 @@ if not st.session_state.profile_collected:
             else:
                 st.session_state.profile_collected = True
                 st.success("✅ Profile saved! You can now chat with AstralYogi.")
-                st.experimental_rerun()
+                st.stop()
 else:
     for msg in st.session_state.messages:
         role = "🧘 AstralYogi" if msg["role"] == "assistant" else "🧍 You"
