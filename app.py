@@ -1,5 +1,5 @@
 import streamlit as st
-import openai
+from openai import OpenAI
 from astro_engine import get_astrology_profile
 import os
 import datetime
@@ -8,10 +8,8 @@ st.set_page_config(page_title="AstralYogi Chatbot", layout="centered")
 st.title("🔱 AstralYogi — Your Vedic Astrology Chatbot")
 st.markdown("Talk to a wise astrologer who decodes your chart in real time.")
 
-if "OPENAI_API_KEY" in st.secrets:
-    openai.api_key = st.secrets["OPENAI_API_KEY"]
-else:
-    openai.api_key = os.getenv("OPENAI_API_KEY")
+api_key = st.secrets.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=api_key)
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -30,14 +28,12 @@ if not st.session_state.profile_collected:
             value=datetime.date(1990, 1, 1)
         )
 
-        # Time selectors
         col1, col2 = st.columns(2)
         with col1:
             hour = st.selectbox("Hour", list(range(0, 24)))
         with col2:
             minute = st.selectbox("Minute", list(range(0, 60)))
 
-        # City dropdown
         cities = ["Bathinda", "Delhi", "Mumbai", "Bangalore", "Hyderabad", "Chennai", "Kolkata", "Pune", "Ahmedabad", "Jaipur"]
         city = st.selectbox("Place of Birth", cities)
 
@@ -97,9 +93,6 @@ Respond with spiritual clarity and uplifting Vedic guidance.
         with st.expander("🔍 GPT Prompt Preview"):
             st.code(prompt)
 
-        print("\n--- FULL PROMPT SENT TO GPT ---\n")
-        print(prompt)
-
         with st.expander("🪐 Astro Data from Engine"):
             st.json(data)
 
@@ -107,11 +100,11 @@ Respond with spiritual clarity and uplifting Vedic guidance.
         messages += st.session_state.messages
 
         try:
-            response = openai.ChatCompletion.create(
+            response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=messages
             )
-            reply = response["choices"][0]["message"]["content"]
+            reply = response.choices[0].message.content
             st.session_state.messages.append({"role": "assistant", "content": reply})
             with st.chat_message("assistant"):
                 st.markdown(f"**🧘 AstralYogi:** {reply}")
