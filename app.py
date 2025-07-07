@@ -14,7 +14,9 @@ st.caption("Ask your cosmic guide. Decode your karma.")
 with st.form("astro_form"):
     name = st.text_input("Your Name")
     dob = st.date_input("Date of Birth", min_value=datetime.date(1900, 1, 1), max_value=datetime.date.today())
-    tob = st.time_input("Time of Birth", value=datetime.time(12, 0))
+    hour = st.selectbox("Hour (0–23)", list(range(0, 24)))
+minute = st.selectbox("Minute", list(range(0, 60)))
+tob = f"{hour:02d}:{minute:02d}"
     location = st.text_input("Place of Birth (City)")
     question = st.text_area("What would you like to ask the cosmos?", height=150)
     submitted = st.form_submit_button("Ask AstralYogi")
