@@ -30,7 +30,7 @@ if not st.session_state.profile_submitted:
             minute = st.selectbox("Minute", list(range(0, 60)))
         tob = f"{hour:02d}:{minute:02d}"
 
-        cities = ["Delhi", "Mumbai", "Bangalore", "Chennai", "Kolkata", "Hyderabad", "Jaipur", "Pune", "Ahmedabad", "Varanasi"]
+        cities = ["Delhi", "Mumbai", "Bangalore", "Chennai", "Kolkata", "Hyderabad", "Jaipur", "Pune", "Ahmedabad", "Varanasi", "Bathinda (Punjab)"]
         place = st.selectbox("Place of Birth (City)", options=cities)
 
         submitted = st.form_submit_button("Start Chatting")
