@@ -4,17 +4,14 @@ from astro_engine import get_astrology_profile
 import os
 
 st.set_page_config(page_title="AstralYogi Chatbot", layout="centered")
-
 st.title("🔱 AstralYogi — Your Vedic Astrology Chatbot")
 st.markdown("Talk to a wise astrologer who decodes your chart in real time.")
 
-# Set up OpenAI API Key
 if "OPENAI_API_KEY" in st.secrets:
     openai.api_key = st.secrets["OPENAI_API_KEY"]
 else:
     openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Session state setup
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "astro_data" not in st.session_state:
@@ -22,7 +19,6 @@ if "astro_data" not in st.session_state:
 if "profile_collected" not in st.session_state:
     st.session_state.profile_collected = False
 
-# Collect user birth details first
 if not st.session_state.profile_collected:
     with st.form("birth_form"):
         name = st.text_input("Your Name")
@@ -46,29 +42,43 @@ if not st.session_state.profile_collected:
                 st.session_state.profile_collected = True
                 st.success("✅ Profile saved! You can now chat with AstralYogi.")
                 st.experimental_rerun()
-
 else:
-    # Display previous messages
     for msg in st.session_state.messages:
         role = "🧘 AstralYogi" if msg["role"] == "assistant" else "🧍 You"
         with st.chat_message(msg["role"]):
             st.markdown(f"**{role}:** {msg['content']}")
 
-    # User input
     if user_input := st.chat_input("Ask about your life, karma, or planets..."):
         st.session_state.messages.append({"role": "user", "content": user_input})
 
-        system_prompt = f'''
-You are AstralYogi — a compassionate, wise Vedic astrologer and karmic guide.
-Here is the user's birth chart:
-{st.session_state.astro_data}
+        data = st.session_state.astro_data
 
-Engage in a conversation. Respond with spiritual depth, clarity, and kindness.
-Focus on Moon nakshatra, Mahadasha, houses, and karmic patterns when relevant.
-Avoid repeating the entire chart unless asked. Build on prior answers.
-'''
+        summary = (
+            f"User Details:\n"
+            f"- Name: {data['name']}\n"
+            f"- Date of Birth: {data['dob']}\n"
+            f"- Time of Birth: {data['tob']}\n"
+            f"- City: {data['city']}\n\n"
+            f"Key Chart Insights:\n"
+            f"- Ascendant: {data['ascendant']['sign']} at {data['ascendant']['degree']}\n"
+            f"- Moon: in {data['planets']['Moon']['sign']}, Nakshatra: {data['planets']['Moon']['nakshatra']} Pada {data['planets']['Moon']['pada']}\n"
+            f"- Current Mahadasha: {data['current_dasha']['mahadasha']} ({data['current_dasha']['start']} to {data['current_dasha']['end']})\n"
+        )
 
-        messages = [{"role": "system", "content": system_prompt}] + st.session_state.messages
+        prompt = f"""
+You are AstralYogi — a compassionate, wise Vedic astrologer.
+
+Here is the user's astrological summary:
+{summary}
+
+They asked: "{user_input}"
+
+Now give an insightful, mystical, karmically-aware response based on their Moon placement, Mahadasha, and chart.
+Respond with spiritual clarity and uplifting Vedic guidance.
+"""
+
+        messages = [{"role": "system", "content": prompt}]
+        messages += st.session_state.messages
 
         try:
             response = openai.ChatCompletion.create(
