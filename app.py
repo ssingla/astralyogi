@@ -1,6 +1,9 @@
 import streamlit as st
 import os
 from openai import OpenAI
+import datetime
+
+
 
 # App config
 st.set_page_config(page_title="AstralYogi", layout="centered")
@@ -10,7 +13,7 @@ st.caption("Ask your cosmic guide. Decode your karma.")
 # Input form
 with st.form("astro_form"):
     name = st.text_input("Your Name")
-    dob = st.date_input("Date of Birth")
+    dob = st.date_input("Date of Birth", min_value=datetime.date(1900, 1, 1), max_value=datetime.date.today())
     tob = st.text_input("Time of Birth (HH:MM, 24h format)")
     location = st.text_input("Place of Birth (City)")
     question = st.text_area("What would you like to ask the cosmos?", height=150)
