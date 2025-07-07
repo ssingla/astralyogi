@@ -77,6 +77,12 @@ Now give an insightful, mystical, karmically-aware response based on their Moon 
 Respond with spiritual clarity and uplifting Vedic guidance.
 """
 
+        with st.expander("🔍 GPT Prompt Preview"):
+            st.code(prompt)
+
+        print("\n--- FULL PROMPT SENT TO GPT ---\n")
+        print(prompt)
+
         messages = [{"role": "system", "content": prompt}]
         messages += st.session_state.messages
 
