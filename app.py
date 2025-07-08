@@ -6,8 +6,18 @@ import os
 import json
 
 st.set_page_config(page_title="AstralYogi — Your Vedic Guide", layout="centered")
+
+def reset_session():
+    for key in ["messages", "astro_data", "profile_collected"]:
+        if key in st.session_state:
+            del st.session_state[key]
+    st.rerun()
+
 st.title("🔱 AstralYogi — Your Cosmic Companion")
 st.markdown("**Your cosmic mirror. Get modern-day guidance using ancient Vedic wisdom.**")
+
+if st.button("❌ Close Chat", type="primary"):
+    reset_session()
 
 api_key = st.secrets.get("OPENAI_API_KEY") or os.getenv("OPENAI_API_KEY")
 client = OpenAI(api_key=api_key)
@@ -18,17 +28,6 @@ if "astro_data" not in st.session_state:
     st.session_state.astro_data = None
 if "profile_collected" not in st.session_state:
     st.session_state.profile_collected = False
-
-def reset_session():
-    for key in ["messages", "astro_data", "profile_collected"]:
-        if key in st.session_state:
-            del st.session_state[key]
-    st.rerun()
-
-# New session control
-st.sidebar.markdown("🌟 **Session Controls**")
-if st.sidebar.button("🔁 Start New Session"):
-    reset_session()
 
 if not st.session_state.profile_collected:
     with st.form("birth_form"):
@@ -70,10 +69,14 @@ else:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-    if user_input := st.chat_input("Ask me anything about your purpose, relationships, career, business, finance, or growth…"):
-        st.session_state.messages.append({"role": "user", "content": user_input})
-        data = st.session_state.astro_data
+    user_input = st.chat_input("Ask me anything about your purpose, relationships, career, business, finance, or growth…")
 
+    if user_input:
+        st.session_state.messages.append({"role": "user", "content": user_input})
+        with st.chat_message("user"):
+            st.markdown(user_input)
+
+        data = st.session_state.astro_data
         system_prompt = f"""
 You are AstralYogi — a compassionate Vedic astrologer and guide.
 You have access to the user's complete chart. Use this internally but only reveal technical details if directly asked.
@@ -99,9 +102,6 @@ Answer using deep understanding but plain language.
 
             with st.chat_message("assistant"):
                 st.markdown(reply)
-
-            with st.expander("🧠 GPT Context Debug", expanded=False):
-                st.code(system_prompt)
 
         except Exception as e:
             st.error("Chatbot error: " + str(e))
