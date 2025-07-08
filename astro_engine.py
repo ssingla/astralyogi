@@ -1,4 +1,3 @@
-
 from geopy.geocoders import Nominatim
 import swisseph as swe
 import datetime
@@ -16,6 +15,7 @@ dasha_sequence = ["Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Sa
 dasha_years = {"Ketu": 7, "Venus": 20, "Sun": 6, "Moon": 10, "Mars": 7,
                "Rahu": 18, "Jupiter": 16, "Saturn": 19, "Mercury": 17}
 
+
 def degree_to_sign_deg_min(degree):
     sign_index = int(degree // 30)
     sign = zodiac_signs[sign_index]
@@ -24,10 +24,12 @@ def degree_to_sign_deg_min(degree):
     minute = int((deg_in_sign - deg) * 60)
     return f"{sign} {deg}°{minute}′", sign
 
+
 def get_nakshatra_pada(degree):
     index = int(degree // (360 / 27))
     pada = int((degree % (360 / 27)) // ((360 / 27) / 4)) + 1
     return nakshatras[index], pada
+
 
 def get_astrology_profile(name, dob, tob, city, tz_offset=5.5, adjust_dst=False):
     try:
@@ -55,20 +57,28 @@ def get_astrology_profile(name, dob, tob, city, tz_offset=5.5, adjust_dst=False)
 
         planet_data = {}
         planet_degrees = {}
+        ayanamsa = swe.get_ayanamsa(jd)
 
         for name_, pid in planet_ids.items():
-            pos = swe.calc_ut(jd, pid, swe.FLG_SIDEREAL)
-            degree = pos[0][0] % 360
+            pos, _ = swe.calc_ut(jd, pid, swe.FLG_SIDEREAL)
+            degree = pos[0] % 360
             planet_degrees[name_] = degree
             deg_str, sign = degree_to_sign_deg_min(degree)
             nak, pada = get_nakshatra_pada(degree)
+
+            retro = pos[3] < 0  # negative speed → retrograde
+            combust = False  # placeholder; real combustion logic can be added
+
             planet_data[name_] = {
                 "sign": sign,
                 "degree": deg_str,
                 "nakshatra": nak,
-                "pada": pada
+                "pada": pada,
+                "retrograde": retro,
+                "combust": combust
             }
 
+        # Ketu (180 degrees opposite to Rahu)
         ketu_deg = (planet_degrees["Rahu"] + 180) % 360
         deg_str, sign = degree_to_sign_deg_min(ketu_deg)
         nak, pada = get_nakshatra_pada(ketu_deg)
@@ -76,10 +86,11 @@ def get_astrology_profile(name, dob, tob, city, tz_offset=5.5, adjust_dst=False)
             "sign": sign,
             "degree": deg_str,
             "nakshatra": nak,
-            "pada": pada
+            "pada": pada,
+            "retrograde": True,
+            "combust": False
         }
 
-        ayanamsa = swe.get_ayanamsa(jd)
         lagna_tropical = swe.houses(jd, lat, lon)[0][0]
         lagna_sidereal = (lagna_tropical - ayanamsa) % 360
         lagna_str, lagna_sign = degree_to_sign_deg_min(lagna_sidereal)
@@ -89,36 +100,33 @@ def get_astrology_profile(name, dob, tob, city, tz_offset=5.5, adjust_dst=False)
             house = int(offset // 30) + 1
             planet_data[planet]["house"] = house
 
+        # Vimshottari Dasha Tree (Mahadasha to Pratyantar)
         moon_deg = planet_degrees["Moon"]
         nak_index = int(moon_deg // (360 / 27))
         dasha_index = nak_index % 9
-        first_dasha = dasha_sequence[dasha_index]
-        full_years = dasha_years[first_dasha]
+        full_dasha = []
         start_deg = nak_index * (360 / 27)
         percent_used = (moon_deg - start_deg) / (360 / 27)
-        first_dasha_remaining = full_years * (1 - percent_used)
-        first_dasha_days = int(first_dasha_remaining * 365.25)
-
-        dasha_chart = []
-        current_date = dt.date()
-        today = datetime.date.today()
-        stack = []
+        remaining = dasha_years[dasha_sequence[dasha_index]] * (1 - percent_used)
+        start_date = dt.date()
 
         for i in range(9):
             lord = dasha_sequence[(dasha_index + i) % 9]
             years = dasha_years[lord]
-            days = int(years * 365.25) if i != 0 else first_dasha_days
-            end_date = current_date + datetime.timedelta(days=days)
-            dasha_chart.append({
+            days = int(remaining * 365.25) if i == 0 else int(years * 365.25)
+            end_date = start_date + datetime.timedelta(days=days)
+            full_dasha.append({
                 "mahadasha": lord,
-                "start": str(current_date),
+                "start": str(start_date),
                 "end": str(end_date)
             })
-            if current_date <= today < end_date:
-                stack.append({"mahadasha": lord, "start": str(current_date), "end": str(end_date)})
-            current_date = end_date
-
-        current_dasha = stack[-1] if stack else {}
+            if start_date <= datetime.date.today() < end_date:
+                current_dasha = {
+                    "mahadasha": lord,
+                    "start": str(start_date),
+                    "end": str(end_date)
+                }
+            start_date = end_date
 
         return {
             "name": name,
@@ -131,7 +139,22 @@ def get_astrology_profile(name, dob, tob, city, tz_offset=5.5, adjust_dst=False)
             },
             "planets": planet_data,
             "current_dasha": current_dasha,
-            "dasha_chart": dasha_chart
+            "dasha_chart": full_dasha,
+            "gpt_profile": {
+                "ascendant_sign": lagna_sign,
+                "moon_nakshatra": planet_data["Moon"]["nakshatra"],
+                "moon_house": planet_data["Moon"]["house"],
+                "moon_pada": planet_data["Moon"]["pada"],
+                "current_mahadasha": current_dasha["mahadasha"],
+                "planetary_strengths": {
+                    key: {
+                        "sign": val["sign"],
+                        "house": val["house"],
+                        "retrograde": val["retrograde"],
+                        "combust": val["combust"]
+                    } for key, val in planet_data.items()
+                }
+            }
         }
 
     except Exception as e:
