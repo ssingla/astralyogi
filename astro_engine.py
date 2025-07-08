@@ -1,6 +1,19 @@
-from geopy.geocoders import Nominatim
 import swisseph as swe
 import datetime
+
+# Cached city coordinates (expandable)
+CITY_COORDINATES = {
+    "Bathinda": (30.2110, 74.9455),
+    "Delhi": (28.6139, 77.2090),
+    "Mumbai": (19.0760, 72.8777),
+    "Bangalore": (12.9716, 77.5946),
+    "Hyderabad": (17.3850, 78.4867),
+    "Chennai": (13.0827, 80.2707),
+    "Kolkata": (22.5726, 88.3639),
+    "Pune": (18.5204, 73.8567),
+    "Ahmedabad": (23.0225, 72.5714),
+    "Jaipur": (26.9124, 75.7873)
+}
 
 zodiac_signs = [
     "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo",
@@ -15,16 +28,10 @@ nakshatras = [
     "Purva Bhadrapada", "Uttara Bhadrapada", "Revati"
 ]
 
-dasha_sequence = [
-    "Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury"
-]
+dasha_sequence = ["Ketu", "Venus", "Sun", "Moon", "Mars", "Rahu", "Jupiter", "Saturn", "Mercury"]
+dasha_years = {"Ketu": 7, "Venus": 20, "Sun": 6, "Moon": 10, "Mars": 7,
+               "Rahu": 18, "Jupiter": 16, "Saturn": 19, "Mercury": 17}
 
-dasha_years = {
-    "Ketu": 7, "Venus": 20, "Sun": 6, "Moon": 10, "Mars": 7,
-    "Rahu": 18, "Jupiter": 16, "Saturn": 19, "Mercury": 17
-}
-
-geolocator = Nominatim(user_agent="astralyogi")
 
 def degree_to_sign_deg_min(degree):
     sign_index = int(degree // 30)
@@ -34,17 +41,18 @@ def degree_to_sign_deg_min(degree):
     minute = int((deg_in_sign - deg) * 60)
     return f"{sign} {deg}°{minute}′", sign
 
+
 def get_nakshatra_pada(degree):
     index = int(degree // (360 / 27))
     pada = int((degree % (360 / 27)) // ((360 / 27) / 4)) + 1
     return nakshatras[index], pada
 
+
 def get_astrology_profile(name, date_of_birth, time_of_birth, city, tz_offset=5.5, adjust_dst=False):
     try:
-        location = geolocator.geocode(city)
-        if not location:
-            return {"error": "City not found."}
-        lat, lon = location.latitude, location.longitude
+        if city not in CITY_COORDINATES:
+            return {"error": "City not supported."}
+        lat, lon = CITY_COORDINATES[city]
 
         dt = datetime.datetime.strptime(date_of_birth + " " + time_of_birth, "%Y-%m-%d %H:%M")
         hour = dt.hour + dt.minute / 60
@@ -65,20 +73,20 @@ def get_astrology_profile(name, date_of_birth, time_of_birth, city, tz_offset=5.
         planet_data = {}
         planet_degrees = {}
 
-        for name, pid in planet_ids.items():
+        for name_, pid in planet_ids.items():
             pos = swe.calc_ut(jd, pid, swe.FLG_SIDEREAL)
             degree = pos[0][0] % 360
-            planet_degrees[name] = degree
+            planet_degrees[name_] = degree
             deg_str, sign = degree_to_sign_deg_min(degree)
             nak, pada = get_nakshatra_pada(degree)
-            planet_data[name] = {
+            planet_data[name_] = {
                 "sign": sign,
                 "degree": deg_str,
                 "nakshatra": nak,
                 "pada": pada
             }
 
-        # Add Ketu
+        # Ketu
         ketu_deg = (planet_degrees["Rahu"] + 180) % 360
         deg_str, sign = degree_to_sign_deg_min(ketu_deg)
         nak, pada = get_nakshatra_pada(ketu_deg)
@@ -102,7 +110,7 @@ def get_astrology_profile(name, date_of_birth, time_of_birth, city, tz_offset=5.
         ketu_offset = (ketu_deg - lagna_sidereal) % 360
         planet_data["Ketu"]["house"] = int(ketu_offset // 30) + 1
 
-        # Vimshottari Mahadasha
+        # Vimshottari Dasha Tree
         moon_deg = planet_degrees["Moon"]
         nak_index = int(moon_deg // (360 / 27))
         dasha_index = nak_index % 9

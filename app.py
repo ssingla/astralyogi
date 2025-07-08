@@ -31,7 +31,12 @@ if not st.session_state.profile_collected:
             minute = st.selectbox("Minute", list(range(0, 60)))
 
         tob = f"{hour:02d}:{minute:02d}"
-        city = st.text_input("Place of Birth (City Name)")
+
+        cities = [
+            "Bathinda", "Delhi", "Mumbai", "Bangalore", "Hyderabad",
+            "Chennai", "Kolkata", "Pune", "Ahmedabad", "Jaipur"
+        ]
+        city = st.selectbox("Place of Birth", cities)
 
         if st.form_submit_button("Chat Now"):
             st.session_state.astro_data = get_astrology_profile(
