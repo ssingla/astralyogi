@@ -32,7 +32,12 @@ if "profile_collected" not in st.session_state:
 if not st.session_state.profile_collected:
     with st.form("birth_form"):
         name = st.text_input("Your Name")
-        dob = st.date_input("Date of Birth", min_value=datetime.date(1900, 1, 1), max_value=datetime.date(2100, 1, 1), value=datetime.date(1990, 1, 1))
+        dob = st.date_input(
+            "Date of Birth",
+            min_value=datetime.date(1900, 1, 1),
+            max_value=datetime.date(2100, 1, 1),
+            value=datetime.date(1990, 1, 1)
+        )
 
         col1, col2 = st.columns(2)
         with col1:
@@ -43,7 +48,7 @@ if not st.session_state.profile_collected:
         tob = f"{hour:02d}:{minute:02d}"
 
         cities = [
-            "Bathinda", "Delhi", "Mumbai", "Bangalore", "Hyderabad",
+            "Bathinda", "Chandigarh", "Delhi", "Mumbai", "Bangalore", "Hyderabad",
             "Chennai", "Kolkata", "Pune", "Ahmedabad", "Jaipur"
         ]
         city = st.selectbox("Place of Birth", cities)
