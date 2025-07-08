@@ -12,7 +12,8 @@ CITY_COORDINATES = {
     "Kolkata": (22.5726, 88.3639),
     "Pune": (18.5204, 73.8567),
     "Ahmedabad": (23.0225, 72.5714),
-    "Jaipur": (26.9124, 75.7873)
+    "Jaipur": (26.9124, 75.7873),
+    "Chandigarh": (30.7333, 76.7794)
 }
 
 zodiac_signs = [
